@@ -6,6 +6,7 @@ import logging
 import logging
 import sys
 
+from dataset import remove_gestures_dataset
 
 # setup logging
 logger = logging.getLogger(__name__)
@@ -22,6 +23,8 @@ FONT = cv2.FONT_HERSHEY_SIMPLEX
 FONT_SCALE = 1
 FONT_COLOR = (100, 255, 100)
 THICKNESS = 2
+
+DATASET_FOLDER_NAME = 'gestures_dataset'
 
 
 class NoCameraDetectedError(Exception):
@@ -107,7 +110,7 @@ def create_folder(root_folder_path, folder_iterator):
         current_folder = ''.join([root_folder_path, '/gesture_', str(current_folder_iteration)])
         os.makedirs(current_folder)
     except FileExistsError:
-        logger.warning(f"File already exists, so not creating a new one: {current_folder}")
+        logger.info(f"File already exists, so not creating a new one: {current_folder}")
         pass
 
     return current_folder
@@ -127,7 +130,7 @@ def run_gesture_collection(camera_index, next_gesture):
     folder_iterator = generator(1)
     top_left_corner = None
     iteration = 0
-    root_folder_path = os.getcwd() + '/gestures_dataset'
+    root_folder_path = os.path.dirname(os.path.abspath(__file__)) + '/' + DATASET_FOLDER_NAME
 
     stream = get_stream()
 
@@ -167,12 +170,12 @@ if __name__ == '__main__':
     ap.add_argument("--images-per-gesture",
                     required=False,
                     help="Number of images to capture for a gesture")
-    # TODO: Implement this functionality
-    # ap.add_argument("-o",
-    #                 "--overwrite",
-    #                 required=False,
-    #                 action="store_true",
-    #                 help="Overwrite old images")
+
+    ap.add_argument("-o",
+                    "--overwrite",
+                    required=False,
+                    action="store_true",
+                    help="Overwrite old images")
     ap.add_argument("--camera-index",
                     required=False,
                     default=0,
@@ -181,5 +184,8 @@ if __name__ == '__main__':
 
     camera_index = args['camera_index']
     next_gesture = 10 if not args["images_per_gesture"] else int(args["images_per_gesture"])
+
+    if args['overwrite']:
+        remove_gestures_dataset.cleanup_dataset()
 
     run_gesture_collection(camera_index=camera_index, next_gesture=next_gesture)
